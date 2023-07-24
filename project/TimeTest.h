@@ -59,7 +59,9 @@ namespace STSL {
                 avg += values[i];
             avg /= values.size();
         }
-    }; /** @class ObjectTest - Сохраняем функцию в которой проходит тест в отдельную структуру, \
+    }; 
+
+    /** @class ObjectTest - Сохраняем функцию в которой проходит тест в отдельную структуру, \
      *                      из которой позже произведем ее вызов
      * */
     struct ObjectTest {
@@ -69,6 +71,10 @@ namespace STSL {
         ObjectTest(const std::string& n, double (*f)()) : name(n), foo(f) {} 
 
         ~ObjectTest() {
+            clear();
+        }
+
+        void clear() {
             name.clear();
             delete foo;
         }
@@ -154,48 +160,175 @@ namespace STSL {
     }
 
     //                                      Группа       frame группы
+    using ObjectDF = std::vector<std::pair<std::string, std::vector<ObjectTest>>>;  // ObjectDataFrame
     using ResultDF = std::vector<std::pair<std::string, std::vector<ResultTest>>>;  // ResultDataFrame
 
     //                                      Процессор    Результат на нем
     using ResultsDF = std::vector<std::pair<std::string, ResultDF>>  // ResultsDataFrameOnProcessor
-    using ObjectDF = std::vector<std::pair<std::string, std::vector<ObjectTest>>>;  // ObjectDataFrame
- /*
-    class OtherResults {
-        ResultsDF rsdf;
 
-        // TODO
+    //
+    using Test_Count = 10;
+
+    class _no_group_test : public std::exception {
     public:
-        OtherResults() = default;  // TODO
-        ~OtherResults() = default;  // TODO
+        _no_group_test() = default;
 
-        void writeCSVs();  // TODO
-        void readCSV(const std::string &fn);  // TODO
-    }
-*/
-    class ResultLaTexOut {
-        // TODO
+        virtual void print() noexcept {
+            std::cout << "Не указана группа теста" << std::endl;
+        }
+    };
+
+    class _no_name_test : public std::exception {
     public:
-        ResultLaTexOut() = default;
+        _no_name_test() = default;
 
-        void outTexResults(const ResultsDF &rsdf);  // TODO
-    }
+        virtual void print() noexcept {
+            std::cout << "Не указано имя теста" << std::endl;
+        }
+    };
+
+    class _no_test_func : public std::exception {
+    public:
+        _no_test_func() = default;
+
+        virtual void print() noexcept {
+            std::cout << "Не введена тестируема функция" << std::endl;
+        }
+    };
+
 
     class TimeTest {
+        std::string CPU;
         ResultDF rdf;
         ObjectDF odf;
+        const size_t test_count = Test_Count;
 
-        ResultDF MakeTest(const ObjectDF &df);
+        std::vector<double> make_timetest(const ObjectTest &ot) noexcept {
+            double startTime, endTime, inaccuracy;
+            std::vector<double> timeframe;
+            for (size_t cnt = 0; cnt < test_count; ++cnt) {
+                startTime = getCPUTime();
+                inaccuracy = ot.foo();
+                endTime = getCPUTime();
+                timeframe.push_back((endTime - startTime - inaccuracy));
+            }
+            return timeframe;
+        }
 
+        void clear_buffer_pair_df(std::pair<std::string, std::vector<ResultTest>>> &df) {
+            df.first.clear();
+            for (size_t i = 0, N = df.second.size(); i < N; ++i) {
+                rdf.second[i].clear();
+            }
+            df.second.clear();
+        }
+
+        void make_group_tests(std::pair<std::string, std::vector<ResultTest>>> &brdf, const std::vector<ObjectTest> &ots) {
+            ResultTest brt;
+            for (size_t i = 0, N = ots.size(); i < N; ++i) {
+                brt.name = ots[i].name;
+                brt.values = make_timetest(ots[i]);
+                brt();
+                brdf.second.push_back(brt);
+            }
+            brt.clear();
+        }
+
+        void make_groups_tests() {
+            std::pair<std::string, std::vector<ResultTest>>> brdf;
+            for (size_t i = 0, N = odf.size(); i < N; ++i) {
+                brdf.first = odf[i].first;
+                make_group_tests(brdf, odf[i].second);
+                rdf.push_back(brdf);
+                clear_buffer_pair_df(brdf);
+            }
+        }
+
+        ResultDF MakeTest() {
+            make_groups_tests(brdf);
+            return rdf;
+        }
+
+        void clear_rdf() {
+            for (size_t i = 0, N = rdf.size(); i < N; ++i) {
+                rdf[i].first.clear();
+                for (size_t j = 0, M = rdf[i].second.size(); j < M; ++j) {
+                    rdf[i].second[j].clear();
+                }
+                rdf[i].second.clear();
+            }
+        }
+
+        void clear_odf() {
+            for (size_t i = 0, N = odf.size(); i < N; ++i) {
+                odf[i].first.clear();
+                for (size_t j = 0, M = odf[i].second.size(); j < M; ++j) {
+                    odf[i].second[j].clear();
+                }
+                odf[i].second.clear();
+            }
+        }
 
     public:
-        TimeTest();
-        ~TimeTest() = default;
-
-        void outTexResult();
+        TimeTest(const std::string &CPUname) : CPU(CPUname) {}
+        ~TimeTest() {
+            clear();
+        }
         
-        void writeCSV(const std::string &fn);
-        void 
+        void add(const std::string &gp, const std::string &tn, double (*f)()) {
+            if (!gp.empty()) {
+                throw _no_group_test();
+            }
+            
+            if (!tn.empty()) {
+                throw _no_name_test();
+            }
+
+            if (f != nullptr) {
+                throw _no_test_func();
+            }
+
+            for (size_t i = 0, N = odf.size(); i < N; ++i) {
+                if (odf[i].first == gp) {
+                    odf[i].second.push_back(ObjectTest(tn, f));
+                    return;
+                }
+            }
+
+            std::pair<std::string, std::vector<ResultTest>> bdf;
+            bdf.first = gp;
+            bdf.second.push_back(ObjectTest(tn, f));
+            odf.push_back(bdf);
+        }
+        
+        std::pair<std::string, ResultDF> dotests() {
+            return std::pair<std::string, ResultDF>(CPUname, MakeTest());
+        }
+
+        void clear() {
+            CPUname.clear();
+            clear_rdf();
+            clear_odf();
+        }
     };
+
+    class ResultsOut {
+        ResultsDF rsdf;  // Массив результатов
+       
+        void TexResults();
+    public:
+        ResultsOut() = default;
+        ResultsOut(const std::string &fn);  // Считать результаты из файлов
+        ResultsOut(const std::vector<std::string> &fns);  // Считать группу результатов
+        ResultsOut(const ResultDF &rdf);  // Записать 1 результат
+        ~ResultsOut();
+
+        void addResultDF(const std::pair<std::string, ResultDF> &rdf)
+        void outTexResults();
+        void readResultsFromCsv(const std::string &fn);
+        void writeReultsToCsv(const std::string &fn);
+    }
+
 };  // StepanTestScriptLibrary
 
 

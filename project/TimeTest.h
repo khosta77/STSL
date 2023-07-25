@@ -4,6 +4,7 @@
 
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -169,6 +170,19 @@ namespace STSL {
     //
     using Test_Count = 10;
 
+    class DataFrameFunction {
+    public:
+        static void clear_buffer_pair_rt(std::pair<std::string, std::vector<ResultTest>>> &df) {
+            df.first.clear();
+            for (size_t i = 0, N = df.second.size(); i < N; ++i) {
+                rdf.second[i].clear();
+            }
+            df.second.clear();
+        }
+
+
+    };
+
     class _no_group_test : public std::exception {
     public:
         _no_group_test() = default;
@@ -215,14 +229,6 @@ namespace STSL {
             return timeframe;
         }
 
-        void clear_buffer_pair_df(std::pair<std::string, std::vector<ResultTest>>> &df) {
-            df.first.clear();
-            for (size_t i = 0, N = df.second.size(); i < N; ++i) {
-                rdf.second[i].clear();
-            }
-            df.second.clear();
-        }
-
         void make_group_tests(std::pair<std::string, std::vector<ResultTest>>> &brdf, const std::vector<ObjectTest> &ots) {
             ResultTest brt;
             for (size_t i = 0, N = ots.size(); i < N; ++i) {
@@ -240,7 +246,7 @@ namespace STSL {
                 brdf.first = odf[i].first;
                 make_group_tests(brdf, odf[i].second);
                 rdf.push_back(brdf);
-                clear_buffer_pair_df(brdf);
+                cDataFrameFunctin::lear_buffer_pair_rt(brdf);
             }
         }
 
@@ -276,15 +282,15 @@ namespace STSL {
         }
         
         void add(const std::string &gp, const std::string &tn, double (*f)()) {
-            if (!gp.empty()) {
+            if (gp.empty()) {
                 throw _no_group_test();
             }
             
-            if (!tn.empty()) {
+            if (tn.empty()) {
                 throw _no_name_test();
             }
 
-            if (f != nullptr) {
+            if (f == nullptr) {
                 throw _no_test_func();
             }
 
@@ -312,10 +318,16 @@ namespace STSL {
         }
     };
 
+//    using ObjectDF = std::vector<std::pair<std::string, std::vector<ObjectTest>>>;  // ObjectDataFrame
+//    using ResultDF = std::vector<std::pair<std::string, std::vector<ResultTest>>>;  // ResultDataFrame
+//    using ResultsDF = std::vector<std::pair<std::string, ResultDF>>  // ResultsDataFrameOnProcessor
+
+
     class ResultsOut {
         ResultsDF rsdf;  // Массив результатов
        
         void TexResults();
+
     public:
         ResultsOut() = default;
         ResultsOut(const std::string &fn);  // Считать результаты из файлов
@@ -323,11 +335,86 @@ namespace STSL {
         ResultsOut(const ResultDF &rdf);  // Записать 1 результат
         ~ResultsOut();
 
-        void addResultDF(const std::pair<std::string, ResultDF> &rdf)
+        void addResultDF(const std::string &CPU, const ResultDF> &rdf);
         void outTexResults();
-        void readResultsFromCsv(const std::string &fn);
-        void writeReultsToCsv(const std::string &fn);
-    }
+        
+        /** @brief readResultFromCsv - функция считывает один csv с данными для одного результата. 
+         *                             В функцию необходимо передать полное имя ('Имя процессора/системы' + .csv).
+         * */
+        int readResultFromCsv(const std::string &fn) {
+            std::ifstream fin{fn, std::ios::binary | std::ios::in};
+            if (!fin.is_open()) {
+                return -1;
+            }
+
+            ResultDF rdf;
+            std::pair<std::string, std::vector<ResultTest>> prdf
+            std::string buf, gr, nm;
+            ResultTest rt;
+            while (fin.eof()) {
+                // Считываем группу
+                do {
+                    fin >> buf;
+                    if (buf != ";")
+                        gp += (buf + " ");
+                } while (buf != ";");
+                gp.pop_back();
+
+                if (prdf.first.empty()) {
+                    prdf.first = gp;
+                } else if (prdf.first == gp) {
+                    gp.clear();
+                } else {
+                    rdf.push_back(prdf);
+                    DataFrameFunction::clear_buffer_pair_rt(prdf);
+                    prdf.first = gp;
+                    gp.clear();
+                }
+                
+                do {
+                    fin >> buf;
+                    if (buf != ";")
+                        nm += (buf + " ");
+                } while (buf != ";");
+                nm.pop_back();
+                rt.name = nm;
+
+                fin >> rt.avg >> buf >> rt.min >> buf >> rt.max >> buf;
+                prdf.second.push_back(rt);
+                nm.clear();
+                rt.clear();
+                buf.clear();
+            }
+            rsdf.push_back(std::pair<std::string, ResultDF>>(std::string(fn.cbegin(), (fn.cend() - 4)), rdf));
+        }
+
+        int writeResultsToCsv() {
+            if (rsdf.empty()) {
+                return -1;
+            }
+
+            std::ofstream fout;
+            for (size_t i = 0, N = rsdf.size(); i < N; ++i) {
+                fout.open(std::string(rsdf[i].first + ".csv").c_str(), std::ios::binary | std::ios::out);
+                if (!fout.is_open()) {
+                    return -1;
+                }
+                
+                auto rdf = rsdf[i].second;  // Не очень эффективно это, но лень прописывать rsdf[i].second каждый раз
+                for (size_t j = 0, M = rdf.size(); j < M; ++j) {
+                    for (size_t k = 0, L = rdf[j].second.size(); k < L; ++k) {
+                        fout << rdf[j].first << " ; " 
+                             << rdf[j].second[k].name << " ; " 
+                             << rdf[j].second[k].avg << " ; " 
+                             << rdf[j].second[k].min << " ; " 
+                             << rdf[j].second[k].max << " ; " << endl;
+                    }
+                }
+                fout.close();
+            }
+            return 0;
+        }
+    };
 
 };  // StepanTestScriptLibrary
 

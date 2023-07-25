@@ -328,6 +328,8 @@ namespace STSL {
        
         void TexResults();
 
+        using Coloumn_Count = rsdf.size();
+
     public:
         ResultsOut() = default;
         ResultsOut(const std::string &fn);  // Считать результаты из файлов
@@ -335,8 +337,43 @@ namespace STSL {
         ResultsOut(const ResultDF &rdf);  // Записать 1 результат
         ~ResultsOut();
 
-        void addResultDF(const std::string &CPU, const ResultDF> &rdf);
-        void outTexResults();
+        void addResultDF(const std::string &CPU, const ResultDF> &rdf) {
+            rsdf.push_back(std::pair<std::string, ResultDf>(CPU, rdf));
+        }
+
+/*
+\begin{tabular}{|p{2.0in}|p{1.5in}|p{1.5in}|p{1.5in}|}
+	\hline
+    Название & Времнная       & \multicolumn{2}{c|}{Процессор}  \\ \cline{3-4}
+    теста    & характеристика & Apple Silicon M1 Pro & Ryzen 5 1600 \\  \hline
+    \multicolumn{4}{|c|}{Группа 1} \\
+    \hline
+	Тест проверки эффективности скорости обработки значений в массиве размер очень большое N	& avg & 1.003 & 25 \\ \cline{2-4}
+	        & min & 0.073 & 17.456 \\ \cline{2-4}
+		    & max & 1.203 & 34.54 \\ \cline{2-4}
+	\hline
+\end{tabular}
+*/
+        void outTexResults() {
+            // тут должна быть проверка на корректный порядок теста. Но в версии 1.0 ее нету...
+            
+            std::cout << "\\begin{tabular}{|p{2.0in}|p{1.5in}|";
+            for (size_t i = 0; i < Coloumn_Count; ++i) {
+                std::cout << "p{1.5in}|";
+            }
+            std::cout << "}\n";
+            std::cout << "     \\hline\n";
+            std::cout << "     Название & Времнная & \\multicolumn{" << Coloumn_Count << "}{c|}{Процессор}  \\\\ \\cline{3-" << (2 + Coloumn_Count) << "}\n";
+            std::cout << "     теста    & характеристика & ";
+            for (size_t i = 0; i < (Coloumn_Count - 1); ++i) {
+                std::cout << rsdf[i].first << " & ";
+            }
+            std::cout << rsdf.back().first << " \\\\  \\hline\n";
+
+            
+
+
+        }
         
         /** @brief readResultFromCsv - функция считывает один csv с данными для одного результата. 
          *                             В функцию необходимо передать полное имя ('Имя процессора/системы' + .csv).
@@ -351,8 +388,7 @@ namespace STSL {
             std::pair<std::string, std::vector<ResultTest>> prdf
             std::string buf, gr, nm;
             ResultTest rt;
-            while (fin.eof()) {
-                // Считываем группу
+            while (fin.eof() == 0) {
                 do {
                     fin >> buf;
                     if (buf != ";")
@@ -379,12 +415,13 @@ namespace STSL {
                 nm.pop_back();
                 rt.name = nm;
 
-                fin >> rt.avg >> buf >> rt.min >> buf >> rt.max >> buf;
+                fin >> rt.avg >> buf >> rt.min >> buf >> rt.max >> buf >> buf;
                 prdf.second.push_back(rt);
                 nm.clear();
                 rt.clear();
                 buf.clear();
             }
+
             rsdf.push_back(std::pair<std::string, ResultDF>>(std::string(fn.cbegin(), (fn.cend() - 4)), rdf));
         }
 

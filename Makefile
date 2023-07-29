@@ -1,7 +1,5 @@
 TARGET=./a.out
 CC=g++
-SRCS=\
-	./main.cpp
 STD=-std=c++17  # Версия cpp
 
 -include project/project.mk

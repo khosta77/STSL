@@ -3,27 +3,15 @@
 ################################################################################
 
 C_SRCS += \
-./project/CPUTime.cpp \
-./project/MyTest.cpp \
-./project/STime.cpp \
-./project/test.cpp \
-./project/test_result.cpp \
+./project/TimeTest.cpp \
 ./project/main.cpp
 
 C_DEPS += \
-./project/CPUTime.d \
-./project/MyTest.d \
-./project/STime.d \
-./project/test.d \
-./project/test_result.d \
+./project/TimeTest.d \
 ./project/main.d
 
 OBJS += \
-./project/CPUTime.o \
-./project/MyTest.o \
-./project/STime.o \
-./project/test.o \
-./project/test_result.o \
+./project/TimeTest.o \
 ./project/main.o
 
 project/%.o: ./project/%.cpp project/project.mk

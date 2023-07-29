@@ -180,7 +180,31 @@ namespace STSL {
             df.second.clear();
         }
 
+        static void clear_result_data_frame(ResultDF &rdf) {
+            for (size_t i = 0, N = rdf.size(); i < N; ++i) {
+                rdf[i].first.clear();
+                for (size_t j = 0, M = rdf[i].second.size(); j < M; ++j)
+                    rdf[i].second[j].clear();
+                rdf[i].second.clear();
+            }
+        }
 
+        static void clear_object_data_frame(ObjectDF &odf) {
+            for (size_t i = 0, N = odf.size(); i < N; ++i) {
+                odf[i].first.clear();
+                for (size_t j = 0, M = odf[i].second.size(); j < M; ++j) {
+                    odf[i].second[j].clear();
+                }
+                odf[i].second.clear();
+            }
+        }
+
+        static void clear_results_data_frame(ResultsDF &rsdf) {
+            for (size_t i = 0, N = rsdf.size(); i < N; ++i) {
+                rsdf[i].first.clear();
+                clear_result_data_frame(rsdf[i].second);
+            }
+        }
     };
 
     class _no_group_test : public std::exception {
@@ -246,33 +270,13 @@ namespace STSL {
                 brdf.first = odf[i].first;
                 make_group_tests(brdf, odf[i].second);
                 rdf.push_back(brdf);
-                cDataFrameFunctin::lear_buffer_pair_rt(brdf);
+                DataFrameFunctin::clear_buffer_pair_rt(brdf);
             }
         }
 
         ResultDF MakeTest() {
             make_groups_tests(brdf);
             return rdf;
-        }
-
-        void clear_rdf() {
-            for (size_t i = 0, N = rdf.size(); i < N; ++i) {
-                rdf[i].first.clear();
-                for (size_t j = 0, M = rdf[i].second.size(); j < M; ++j) {
-                    rdf[i].second[j].clear();
-                }
-                rdf[i].second.clear();
-            }
-        }
-
-        void clear_odf() {
-            for (size_t i = 0, N = odf.size(); i < N; ++i) {
-                odf[i].first.clear();
-                for (size_t j = 0, M = odf[i].second.size(); j < M; ++j) {
-                    odf[i].second[j].clear();
-                }
-                odf[i].second.clear();
-            }
         }
 
     public:
@@ -313,15 +317,12 @@ namespace STSL {
 
         void clear() {
             CPUname.clear();
-            clear_rdf();
-            clear_odf();
+            DataFrameFunctin::clear_result_data_frame(rdf);
+            DataFrameFunctin::clear_object_data_frame(odf);
         }
     };
 
 //    using ObjectDF = std::vector<std::pair<std::string, std::vector<ObjectTest>>>;  // ObjectDataFrame
-//    using ResultDF = std::vector<std::pair<std::string, std::vector<ResultTest>>>;  // ResultDataFrame
-//    using ResultsDF = std::vector<std::pair<std::string, ResultDF>>  // ResultsDataFrameOnProcessor
-
 
     class ResultsOut {
         ResultsDF rsdf;  // Массив результатов
@@ -330,53 +331,121 @@ namespace STSL {
 
         using Coloumn_Count = rsdf.size();
 
-    public:
-        ResultsOut() = default;
-        ResultsOut(const std::string &fn);  // Считать результаты из файлов
-        ResultsOut(const std::vector<std::string> &fns);  // Считать группу результатов
-        ResultsOut(const ResultDF &rdf);  // Записать 1 результат
-        ~ResultsOut();
-
-        void addResultDF(const std::string &CPU, const ResultDF> &rdf) {
-            rsdf.push_back(std::pair<std::string, ResultDf>(CPU, rdf));
-        }
-
-/*
-\begin{tabular}{|p{2.0in}|p{1.5in}|p{1.5in}|p{1.5in}|}
-	\hline
-    Название & Времнная       & \multicolumn{2}{c|}{Процессор}  \\ \cline{3-4}
-    теста    & характеристика & Apple Silicon M1 Pro & Ryzen 5 1600 \\  \hline
-    \multicolumn{4}{|c|}{Группа 1} \\
-    \hline
-	Тест проверки эффективности скорости обработки значений в массиве размер очень большое N	& avg & 1.003 & 25 \\ \cline{2-4}
-	        & min & 0.073 & 17.456 \\ \cline{2-4}
-		    & max & 1.203 & 34.54 \\ \cline{2-4}
-	\hline
-\end{tabular}
-*/
-        void outTexResults() {
-            // тут должна быть проверка на корректный порядок теста. Но в версии 1.0 ее нету...
-            
+        /** @brief printTableTitle - Вывод объявление таблицы формата tex
+         * */
+        void printTableTitle() {
             std::cout << "\\begin{tabular}{|p{2.0in}|p{1.5in}|";
             for (size_t i = 0; i < Coloumn_Count; ++i) {
                 std::cout << "p{1.5in}|";
             }
             std::cout << "}\n";
-            std::cout << "     \\hline\n";
-            std::cout << "     Название & Времнная & \\multicolumn{" << Coloumn_Count << "}{c|}{Процессор}  \\\\ \\cline{3-" << (2 + Coloumn_Count) << "}\n";
-            std::cout << "     теста    & характеристика & ";
+            std::cout << "\\hline\n";
+        }
+
+        /** @brief printTableHead -  Вывод шапки таблицы 
+         * */
+        void printTableHead() {
+            std::cout << "Название & Времнная & \\multicolumn{" << Coloumn_Count << "}{c|}{Процессор}  \\\\ \\cline{3-" << (2 + Coloumn_Count) << "}\n";
+            std::cout << "теста    & характеристика & ";
             for (size_t i = 0; i < (Coloumn_Count - 1); ++i) {
                 std::cout << rsdf[i].first << " & ";
             }
-            std::cout << rsdf.back().first << " \\\\  \\hline\n";
+            std::cout << rsdf.back().first << " \\\\  \\hline\n"; 
+        }
 
-            
+        void printGroupTitle(const std::string &gn) {
+            std::cout << "\\multicolumn{" << (2 + Coloumn_Count) << "}{|c|}{" << gn << "} \\\\ \\hline\n";
+        }
 
+        void printAVG(const size_t &i, const size_t &j) {
+            for (size_t k = 0, L = Coloumn_Count; k < L; ++k)
+                std::cout << " & "<< rsdf[k].second[i].second[j].avg;
+            std::cout << "\\\\ \\cline{2-" << (2 + Coloumn_Count) << "}\n";
+            std::cout << " & min ";
+        }
 
+        void printMIN(const size_t &i, const size_t &j) {
+            for (size_t k = 0, L = Coloumn_Count; k < L; ++k)
+                std::cout << " & "<< rsdf[k].second[i].second[j].min;
+            std::cout << "\\\\ \\cline{2-" << (2 + Coloumn_Count) << "}\n";
+            std::cout << " & max ";
+        }
+
+        void printMAX(const size_t &i, const size_t &j) {
+            for (size_t k = 0, L = Coloumn_Count; k < L; ++k)
+                std::cout << " & "<< rsdf[k].second[i].second[j].max;
+            std::cout << "\\\\ \\hline \n";
+        }
+
+        void printOneTestInGroup(const size_t &i, const size_t &j) {
+            std::cout << rsdf[0].second[i].second[j].name << " & avg";
+            printAVG(i, j);
+            printMIN(i, j);
+            printMAX(i, j);
+        }
+       
+        /** @brief printTestResult - Вывод групп и вложенных тестов
+         * */
+        void printTestResult() {
+            for (size_t i = 0, N = rsdf[0].second.size(); i <  N; ++i) {
+                printGroupTitle(rsdf[0].second[i].first);
+                for (size_t j = 0; M = rsdf[0].second[i].second.size(); j < M; ++j)
+                    printOneTestInGroup(i, j);
+            }
+        }
+
+        /** @brief printTableEnd - Вывод конца таблицы
+         * */
+        void printTableEnd() {
+            std::cout << "\\end{tabular}" << std::endl;
+        }
+
+    public:
+        ResultsOut() = default;
+
+        /** @brief ResultsOut(const std::string &fn) - Считать результаты из файлов
+         * */
+        ResultsOut(const std::string &fn) {
+            readResultFromCsv(fn);
+        }
+        
+        /** @brief ResultsOut(const std::vector<std::string> &fns) - Считать группу результатов
+         * */
+        ResultsOut(const std::vector<std::string> &fns) {
+            for (size_t i = 0, N = fns.size(); i < N; ++i)
+                readResultFromCsv(fns[i]);
+        }
+        
+        /** @brief ResultsOut(const std::string &CPU, const ResultDF &rdf) - записать при создании уже 1 результат
+         * */
+        ResultsOut(const std::pair<std::string, ResultDF> &prdf) {
+            rsdf.push_back(prdf);
+        }
+
+        ~ResultsOut() {
+            DataFrameFunctin::clear_results_data_frame(rsdf);
+        }
+
+        /** @brief addResultDF - добавляет массив данных, к возможности вывода
+         * */
+        void addResultDF(const std::string &CPU, const ResultDF> &rdf) {
+            rsdf.push_back(std::pair<std::string, ResultDf>(CPU, rdf));
+        }
+
+        /** outTexResults - Долго думал как красиво вывести данные, и на мой взгляд лучший вариант ввести их в tex таблицу,
+         *                  функция ввыводит формат tex.
+         * */
+        void outTexResults() {
+            // TODO: Проверка корректных данных, чтобы не была краша по памяти 
+            printTableTitle();
+            printTableHead();
+            printTestResult();
+            printTableEnd();
         }
         
         /** @brief readResultFromCsv - функция считывает один csv с данными для одного результата. 
          *                             В функцию необходимо передать полное имя ('Имя процессора/системы' + .csv).
+         *  TODO: разбить функцию и сократить колличество строк в функции. 29.07.23 - лень делать
          * */
         int readResultFromCsv(const std::string &fn) {
             std::ifstream fin{fn, std::ios::binary | std::ios::in};
@@ -425,6 +494,9 @@ namespace STSL {
             rsdf.push_back(std::pair<std::string, ResultDF>>(std::string(fn.cbegin(), (fn.cend() - 4)), rdf));
         }
 
+        /** @brief writeResultsToCsv - Функция записывает сохраненные данные в "csv"
+         *  TODO: разбить функцию и сократить колличество строк в функции. 29.07.23 - лень делать
+         * */
         int writeResultsToCsv() {
             if (rsdf.empty()) {
                 return -1;

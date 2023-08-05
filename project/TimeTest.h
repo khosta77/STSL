@@ -79,7 +79,7 @@ namespace STSL {
 
         void clear() {
             name.clear();
-            delete foo;
+            foo = nullptr;
         }
     };
 
@@ -169,20 +169,21 @@ namespace STSL {
     using ResultDF = std::vector<std::pair<std::string, std::vector<ResultTest>>>;  // ResultDataFrame
 
     //                                      Процессор    Результат на нем
-    using ResultsDF = std::vector<std::pair<std::string, ResultDF>>  // ResultsDataFrameOnProcessor
+    using ResultsDF = std::vector<std::pair<std::string, ResultDF>>;  // ResultsDataFrameOnProcessor
 
-    using Test_Count = 10;  // 'Макрос' колличества проводимых тестов
+#define TEST_COUNT 10  // Макрос колличества проводимых тестов
 
-    namespace DataFrameFunction {
-        void clear_buffer_pair_rt(std::pair<std::string, std::vector<ResultTest>>> &df) {
+    class DataFrameFunction {
+    public:
+        static void clear_buffer_pair_rt(std::pair<std::string, std::vector<ResultTest>> &df) {
             df.first.clear();
             for (size_t i = 0, N = df.second.size(); i < N; ++i) {
-                rdf.second[i].clear();
+                df.second[i].clear();
             }
             df.second.clear();
         }
 
-        void clear_result_data_frame(ResultDF &rdf) {
+        static void clear_result_data_frame(ResultDF &rdf) {
             for (size_t i = 0, N = rdf.size(); i < N; ++i) {
                 rdf[i].first.clear();
                 for (size_t j = 0, M = rdf[i].second.size(); j < M; ++j)
@@ -191,7 +192,7 @@ namespace STSL {
             }
         }
 
-        void clear_object_data_frame(ObjectDF &odf) {
+        static void clear_object_data_frame(ObjectDF &odf) {
             for (size_t i = 0, N = odf.size(); i < N; ++i) {
                 odf[i].first.clear();
                 for (size_t j = 0, M = odf[i].second.size(); j < M; ++j) {
@@ -201,14 +202,14 @@ namespace STSL {
             }
         }
 
-        void clear_results_data_frame(ResultsDF &rsdf) {
+        static void clear_results_data_frame(ResultsDF &rsdf) {
             for (size_t i = 0, N = rsdf.size(); i < N; ++i) {
                 rsdf[i].first.clear();
                 clear_result_data_frame(rsdf[i].second);
             }
         }
 
-        void print_pair_resultdf(const std::pair<std::string, ResultDF> &prdf) {
+        static void print_pair_resultdf(const std::pair<std::string, ResultDF> &prdf) {
             std::cout << "CPU: " << prdf.first << std::endl;
             for (size_t i = 0, N = prdf.second.size(); i < N; ++i) {
                 std::cout << prdf.second[i].first << std::endl;
@@ -223,7 +224,7 @@ namespace STSL {
 // TimeTest.h
     class _no_some_data_in_add : public std::exception {
     public:
-        _no_group_test() = default;
+        _no_some_data_in_add() = default;
 
         virtual void print() noexcept {
             std::cout << "Не указан какой-то тип данных" << std::endl;
@@ -236,15 +237,15 @@ namespace STSL {
         std::string CPU;
         ResultDF rdf;
         ObjectDF odf;
-        const size_t test_count = Test_Count;
+        const size_t test_count = TEST_COUNT;
         
         // 'Макросы' для проверки getCPUTime();
-        using Group_getCPUTime = std::string("Группа: Проверка скорости внутренних функций, нужных для уточнения погрешности");
-        using Name_getCPUTime = std::string("Проверка скорости работы функции getCPUTime()");
+        const std::string Group_getCPUTime = "Группа: Проверка скорости внутренних функций, нужных для уточнения погрешности";
+        const std::string Name_getCPUTime = "Проверка скорости работы функции getCPUTime()";
 
         // 'Макросы' для добавления переменных
-        using Object_Test_Add = 0;
-        using Group_No_Existing = -1;
+        const int Object_Test_Add = 0;
+        const int Group_No_Existing = -1;
 
         std::vector<double> make_timetest(const ObjectTest &ot) noexcept {
             double startTime, endTime, inaccuracy;
@@ -258,7 +259,7 @@ namespace STSL {
             return timeframe;
         }
 
-        void make_group_tests(std::pair<std::string, std::vector<ResultTest>>> &brdf, const std::vector<ObjectTest> &ots) {
+        void make_group_tests(std::pair<std::string, std::vector<ResultTest>> &brdf, const std::vector<ObjectTest> &ots) {
             ResultTest brt;
             for (size_t i = 0, N = ots.size(); i < N; ++i) {
                 brt.name = ots[i].name;
@@ -270,7 +271,7 @@ namespace STSL {
         }
 
         void make_groups_tests() {
-            std::pair<std::string, std::vector<ResultTest>>> brdf;
+            std::pair<std::string, std::vector<ResultTest>> brdf;
             for (size_t i = 0, N = odf.size(); i < N; ++i) {
                 brdf.first = odf[i].first;
                 make_group_tests(brdf, odf[i].second);
@@ -280,7 +281,7 @@ namespace STSL {
         }
 
         ResultDF MakeTest() {
-            make_groups_tests(brdf);
+            make_groups_tests();
             return rdf;
         }
 
@@ -294,7 +295,7 @@ namespace STSL {
         /** @brief push_object_test_in_existing_group - Метод в УЖЕ существующую группы добавляем объект \
          *                                             тестов(имя и указатель на тестируемую функцию)
          * */
-        const int push_object_test_in_existing_group(const std::string &gp, const std::string &tn, double (*f)()) {
+        int push_object_test_in_existing_group(const std::string &gp, const std::string &tn, double (*f)()) {
             for (size_t i = 0, N = odf.size(); i < N; ++i) {
                 if (odf[i].first == gp) {
                     odf[i].second.push_back(ObjectTest(tn, f));
@@ -307,9 +308,11 @@ namespace STSL {
         /** @brief push_new_group - Метод добавляет новую группу
          * */
         void push_new_group(const std::string &gp, const std::string &tn, double (*f)()) {
-            std::pair<std::string, std::vector<ResultTest>> bdf;
+            std::pair<std::string, std::vector<ObjectTest>> bdf;
             bdf.first = gp;
-            bdf.second.push_back(ObjectTest(tn, f));
+            std::vector<ObjectTest> vrt{ObjectTest(tn, f)};
+            bdf.second = vrt;
+            vrt.clear();  // Не очень красиво 
             odf.push_back(bdf);
         }
 
@@ -337,13 +340,13 @@ namespace STSL {
         /** @brief dotests - Метод проводит тест и возращает пару(Процессор и результат)
          * */
         std::pair<std::string, ResultDF> dotests() {
-            return std::pair<std::string, ResultDF>(CPUname, MakeTest());
+            return std::pair<std::string, ResultDF>(CPU, MakeTest());
         }
 
         /** @brief clear - Метод проводит очистку типов данных
          * */
         void clear() {
-            CPUname.clear();
+            CPU.clear();
             DataFrameFunction::clear_result_data_frame(rdf);
             DataFrameFunction::clear_object_data_frame(odf);
         }
@@ -355,13 +358,13 @@ namespace STSL {
        
         void TexResults();
 
-        using Coloumn_Count = rsdf.size();
+#define COLOUMN_COUNT rsdf.size()
 
         /** @brief printTableTitle - Вывод объявление таблицы формата tex
          * */
         void printTableTitle() {
             std::cout << "\\begin{tabular}{|p{2.0in}|p{1.5in}|";
-            for (size_t i = 0; i < Coloumn_Count; ++i) {
+            for (size_t i = 0; i < COLOUMN_COUNT; ++i) {
                 std::cout << "p{1.5in}|";
             }
             std::cout << "}\n";
@@ -371,34 +374,34 @@ namespace STSL {
         /** @brief printTableHead -  Вывод шапки таблицы 
          * */
         void printTableHead() {
-            std::cout << "Название & Времнная & \\multicolumn{" << Coloumn_Count << "}{c|}{Процессор}  \\\\ \\cline{3-" << (2 + Coloumn_Count) << "}\n";
+            std::cout << "Название & Времнная & \\multicolumn{" << COLOUMN_COUNT << "}{c|}{Процессор}  \\\\ \\cline{3-" << (2 + COLOUMN_COUNT) << "}\n";
             std::cout << "теста    & характеристика & ";
-            for (size_t i = 0; i < (Coloumn_Count - 1); ++i) {
+            for (size_t i = 0, N = (COLOUMN_COUNT - 1); i < N; ++i) {
                 std::cout << rsdf[i].first << " & ";
             }
             std::cout << rsdf.back().first << " \\\\  \\hline\n"; 
         }
 
         void printGroupTitle(const std::string &gn) {
-            std::cout << "\\multicolumn{" << (2 + Coloumn_Count) << "}{|c|}{" << gn << "} \\\\ \\hline\n";
+            std::cout << "\\multicolumn{" << (2 + COLOUMN_COUNT) << "}{|c|}{" << gn << "} \\\\ \\hline\n";
         }
 
         void printAVG(const size_t &i, const size_t &j) {
-            for (size_t k = 0, L = Coloumn_Count; k < L; ++k)
+            for (size_t k = 0, L = COLOUMN_COUNT; k < L; ++k)
                 std::cout << " & "<< rsdf[k].second[i].second[j].avg;
-            std::cout << "\\\\ \\cline{2-" << (2 + Coloumn_Count) << "}\n";
+            std::cout << "\\\\ \\cline{2-" << (2 + COLOUMN_COUNT) << "}\n";
             std::cout << " & min ";
         }
 
         void printMIN(const size_t &i, const size_t &j) {
-            for (size_t k = 0, L = Coloumn_Count; k < L; ++k)
+            for (size_t k = 0, L = COLOUMN_COUNT; k < L; ++k)
                 std::cout << " & "<< rsdf[k].second[i].second[j].min;
-            std::cout << "\\\\ \\cline{2-" << (2 + Coloumn_Count) << "}\n";
+            std::cout << "\\\\ \\cline{2-" << (2 + COLOUMN_COUNT) << "}\n";
             std::cout << " & max ";
         }
 
         void printMAX(const size_t &i, const size_t &j) {
-            for (size_t k = 0, L = Coloumn_Count; k < L; ++k)
+            for (size_t k = 0, L = COLOUMN_COUNT; k < L; ++k)
                 std::cout << " & "<< rsdf[k].second[i].second[j].max;
             std::cout << "\\\\ \\hline \n";
         }
@@ -415,7 +418,7 @@ namespace STSL {
         void printTestResult() {
             for (size_t i = 0, N = rsdf[0].second.size(); i <  N; ++i) {
                 printGroupTitle(rsdf[0].second[i].first);
-                for (size_t j = 0; M = rsdf[0].second[i].second.size(); j < M; ++j)
+                for (size_t j = 0, M = rsdf[0].second[i].second.size(); j < M; ++j)
                     printOneTestInGroup(i, j);
             }
         }
@@ -454,7 +457,7 @@ namespace STSL {
 
         /** @brief addResultDF - добавляет массив данных, к возможности вывода
          * */
-        void addResultDF(const std::string &CPU, const ResultDF> &rdf) {
+        void addResultDF(const std::string &CPU, const ResultDF &rdf) {
             rsdf.push_back(std::pair<std::string, ResultDf>(CPU, rdf));
         }
 

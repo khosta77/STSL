@@ -21,7 +21,8 @@
 
 
 namespace STSL {
-    /** @class 
+// ResultTest.h
+    /** @class ResultTest - объект для хранения и поверхностной(получение среднего) обработки тестов
      * */
     struct ResultTest {
         std::string name;               // Имя теста
@@ -62,6 +63,7 @@ namespace STSL {
         }
     }; 
 
+// ObjectTest.h
     /** @class ObjectTest - Сохраняем функцию в которой проходит тест в отдельную структуру, \
      *                      из которой позже произведем ее вызов
      * */
@@ -81,6 +83,7 @@ namespace STSL {
         }
     };
 
+// GetCPUTime.h
     /** @breif getCPUTime - \
      * Возвращает количество процессорного времени, используемого текущим процессом, \
      * в секундах или -1,0, если произошла ошибка. \
@@ -157,9 +160,10 @@ namespace STSL {
 #endif
 
 #endif
-        return -1;      /* Failed. */
+        return -1;
     }
 
+    // Сокращения работы с сложными объектами
     //                                      Группа       frame группы
     using ObjectDF = std::vector<std::pair<std::string, std::vector<ObjectTest>>>;  // ObjectDataFrame
     using ResultDF = std::vector<std::pair<std::string, std::vector<ResultTest>>>;  // ResultDataFrame
@@ -167,12 +171,10 @@ namespace STSL {
     //                                      Процессор    Результат на нем
     using ResultsDF = std::vector<std::pair<std::string, ResultDF>>  // ResultsDataFrameOnProcessor
 
-    //
-    using Test_Count = 10;
+    using Test_Count = 10;  // 'Макрос' колличества проводимых тестов
 
-    class DataFrameFunction {
-    public:
-        static void clear_buffer_pair_rt(std::pair<std::string, std::vector<ResultTest>>> &df) {
+    namespace DataFrameFunction {
+        void clear_buffer_pair_rt(std::pair<std::string, std::vector<ResultTest>>> &df) {
             df.first.clear();
             for (size_t i = 0, N = df.second.size(); i < N; ++i) {
                 rdf.second[i].clear();
@@ -180,7 +182,7 @@ namespace STSL {
             df.second.clear();
         }
 
-        static void clear_result_data_frame(ResultDF &rdf) {
+        void clear_result_data_frame(ResultDF &rdf) {
             for (size_t i = 0, N = rdf.size(); i < N; ++i) {
                 rdf[i].first.clear();
                 for (size_t j = 0, M = rdf[i].second.size(); j < M; ++j)
@@ -189,7 +191,7 @@ namespace STSL {
             }
         }
 
-        static void clear_object_data_frame(ObjectDF &odf) {
+        void clear_object_data_frame(ObjectDF &odf) {
             for (size_t i = 0, N = odf.size(); i < N; ++i) {
                 odf[i].first.clear();
                 for (size_t j = 0, M = odf[i].second.size(); j < M; ++j) {
@@ -199,47 +201,50 @@ namespace STSL {
             }
         }
 
-        static void clear_results_data_frame(ResultsDF &rsdf) {
+        void clear_results_data_frame(ResultsDF &rsdf) {
             for (size_t i = 0, N = rsdf.size(); i < N; ++i) {
                 rsdf[i].first.clear();
                 clear_result_data_frame(rsdf[i].second);
             }
         }
+
+        void print_pair_resultdf(const std::pair<std::string, ResultDF> &prdf) {
+            std::cout << "CPU: " << prdf.first << std::endl;
+            for (size_t i = 0, N = prdf.second.size(); i < N; ++i) {
+                std::cout << prdf.second[i].first << std::endl;
+                for (size_t j = 0, M = prdf.second[i].second.size(); j < M; ++j) {
+                    std::cout << prdf.second[i].second[j].name << "\r\n\t"
+                              << prdf.second[i].second[j].avg << std::endl;
+                }
+            }
+        }
     };
 
-    class _no_group_test : public std::exception {
+// TimeTest.h
+    class _no_some_data_in_add : public std::exception {
     public:
         _no_group_test() = default;
 
         virtual void print() noexcept {
-            std::cout << "Не указана группа теста" << std::endl;
+            std::cout << "Не указан какой-то тип данных" << std::endl;
         }
     };
 
-    class _no_name_test : public std::exception {
-    public:
-        _no_name_test() = default;
-
-        virtual void print() noexcept {
-            std::cout << "Не указано имя теста" << std::endl;
-        }
-    };
-
-    class _no_test_func : public std::exception {
-    public:
-        _no_test_func() = default;
-
-        virtual void print() noexcept {
-            std::cout << "Не введена тестируема функция" << std::endl;
-        }
-    };
-
-
+    /** @class TimeTest - класс, который заполняется тестами и их выполняет, возращая набор данных
+     */
     class TimeTest {
         std::string CPU;
         ResultDF rdf;
         ObjectDF odf;
         const size_t test_count = Test_Count;
+        
+        // 'Макросы' для проверки getCPUTime();
+        using Group_getCPUTime = std::string("Группа: Проверка скорости внутренних функций, нужных для уточнения погрешности");
+        using Name_getCPUTime = std::string("Проверка скорости работы функции getCPUTime()");
+
+        // 'Макросы' для добавления переменных
+        using Object_Test_Add = 0;
+        using Group_No_Existing = -1;
 
         std::vector<double> make_timetest(const ObjectTest &ot) noexcept {
             double startTime, endTime, inaccuracy;
@@ -270,7 +275,7 @@ namespace STSL {
                 brdf.first = odf[i].first;
                 make_group_tests(brdf, odf[i].second);
                 rdf.push_back(brdf);
-                DataFrameFunctin::clear_buffer_pair_rt(brdf);
+                DataFrameFunction::clear_buffer_pair_rt(brdf);
             }
         }
 
@@ -279,51 +284,72 @@ namespace STSL {
             return rdf;
         }
 
-    public:
-        TimeTest(const std::string &CPUname) : CPU(CPUname) {}
-        ~TimeTest() {
-            clear();
+        /** @brief put_getCPUTime - Приписывается в конструкторе, вызывается для того, чтобы провести \
+         *                          проверку метода который может давать погрешность на результат.
+         * */
+        void put_getCPUTime() {
+            push_new_group(Group_getCPUTime, Name_getCPUTime, getCPUTime);
         }
-        
-        void add(const std::string &gp, const std::string &tn, double (*f)()) {
-            if (gp.empty()) {
-                throw _no_group_test();
-            }
-            
-            if (tn.empty()) {
-                throw _no_name_test();
-            }
 
-            if (f == nullptr) {
-                throw _no_test_func();
-            }
-
+        /** @brief push_object_test_in_existing_group - Метод в УЖЕ существующую группы добавляем объект \
+         *                                             тестов(имя и указатель на тестируемую функцию)
+         * */
+        const int push_object_test_in_existing_group(const std::string &gp, const std::string &tn, double (*f)()) {
             for (size_t i = 0, N = odf.size(); i < N; ++i) {
                 if (odf[i].first == gp) {
                     odf[i].second.push_back(ObjectTest(tn, f));
-                    return;
+                    return Object_Test_Add;
                 }
             }
+            return Group_No_Existing;
+        }
 
+        /** @brief push_new_group - Метод добавляет новую группу
+         * */
+        void push_new_group(const std::string &gp, const std::string &tn, double (*f)()) {
             std::pair<std::string, std::vector<ResultTest>> bdf;
             bdf.first = gp;
             bdf.second.push_back(ObjectTest(tn, f));
             odf.push_back(bdf);
         }
+
+    public:
+        TimeTest(const std::string &CPUname) : CPU(CPUname) {
+            put_getCPUTime();
+        }
+
+        ~TimeTest() {
+            clear();
+        }
+
+        /** @brief add - Метод для добавления тестов.
+         *  @param gp - Имя группы, в группа предполагается идейное объединение тестов
+         *  @param tn - testname - имя теста
+         *  @param f - функция которую тестируют на время
+         * */
+        void add(const std::string &gp, const std::string &tn, double (*f)()) {
+            if (gp.empty() || tn.empty() || (f == nullptr))
+                throw _no_some_data_in_add(); 
+            if (push_object_test_in_existing_group(gp, tn, f) == Group_No_Existing)
+                push_new_group(gp, tn, f);
+        }
         
+        /** @brief dotests - Метод проводит тест и возращает пару(Процессор и результат)
+         * */
         std::pair<std::string, ResultDF> dotests() {
             return std::pair<std::string, ResultDF>(CPUname, MakeTest());
         }
 
+        /** @brief clear - Метод проводит очистку типов данных
+         * */
         void clear() {
             CPUname.clear();
-            DataFrameFunctin::clear_result_data_frame(rdf);
-            DataFrameFunctin::clear_object_data_frame(odf);
+            DataFrameFunction::clear_result_data_frame(rdf);
+            DataFrameFunction::clear_object_data_frame(odf);
         }
     };
 
-//    using ObjectDF = std::vector<std::pair<std::string, std::vector<ObjectTest>>>;  // ObjectDataFrame
-
+// ResultOut.h
     class ResultsOut {
         ResultsDF rsdf;  // Массив результатов
        
@@ -423,7 +449,7 @@ namespace STSL {
         }
 
         ~ResultsOut() {
-            DataFrameFunctin::clear_results_data_frame(rsdf);
+            DataFrameFunction::clear_results_data_frame(rsdf);
         }
 
         /** @brief addResultDF - добавляет массив данных, к возможности вывода

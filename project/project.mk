@@ -3,16 +3,32 @@
 ################################################################################
 
 C_SRCS += \
+./project/ResultTest.cpp \
+./project/ObjectTest.cpp \
+./project/DataFrame.cpp \
+./project/GetCPUTime.cpp \
 ./project/TimeTest.cpp \
+./project/ResultOut.cpp \
 ./project/main.cpp
 
 C_DEPS += \
+./project/ResultTest.d \
+./project/ObjectTest.d \
+./project/DataFrame.d \
+./project/GetCPUTime.d \
 ./project/TimeTest.d \
+./project/ResultOut.d \
 ./project/main.d
 
 OBJS += \
+./project/ResultTest.o \
+./project/ObjectTest.o \
+./project/DataFrame.o \
+./project/GetCPUTime.o \
 ./project/TimeTest.o \
+./project/ResultOut.o \
 ./project/main.o
+
 
 project/%.o: ./project/%.cpp project/project.mk
 	@echo 'Цель построения: $<'

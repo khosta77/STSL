@@ -212,11 +212,14 @@ namespace STSL {
         static void print_pair_resultdf(const std::pair<std::string, ResultDF> &prdf) {
             std::cout << "CPU: " << prdf.first << std::endl;
             for (size_t i = 0, N = prdf.second.size(); i < N; ++i) {
-                std::cout << prdf.second[i].first << std::endl;
+                std::cout << "Группа: " << prdf.second[i].first << std::endl;
                 for (size_t j = 0, M = prdf.second[i].second.size(); j < M; ++j) {
-                    std::cout << prdf.second[i].second[j].name << "\r\n\t"
-                              << prdf.second[i].second[j].avg << std::endl;
+                    std::cout << "Имя теста: " << prdf.second[i].second[j].name << "\r\n---> avg: "
+                              << std::fixed << prdf.second[i].second[j].avg 
+                              << " min: " << prdf.second[i].second[j].min
+                              << " max: " << prdf.second[i].second[j].max << "\r\n" << std::endl;
                 }
+                std::cout << "\r\n" << std::endl;
             }
         }
     };
@@ -240,7 +243,7 @@ namespace STSL {
         const size_t test_count = TEST_COUNT;
         
         // 'Макросы' для проверки getCPUTime();
-        const std::string Group_getCPUTime = "Группа: Проверка скорости внутренних функций, нужных для уточнения погрешности";
+        const std::string Group_getCPUTime = "Проверка скорости внутренних функций, нужных для уточнения погрешности";
         const std::string Name_getCPUTime = "Проверка скорости работы функции getCPUTime()";
 
         // 'Макросы' для добавления переменных
@@ -458,7 +461,7 @@ namespace STSL {
         /** @brief addResultDF - добавляет массив данных, к возможности вывода
          * */
         void addResultDF(const std::string &CPU, const ResultDF &rdf) {
-            rsdf.push_back(std::pair<std::string, ResultDf>(CPU, rdf));
+            rsdf.push_back(std::pair<std::string, ResultDF>(CPU, rdf));
         }
 
         /** outTexResults - Долго думал как красиво вывести данные, и на мой взгляд лучший вариант ввести их в tex таблицу,
@@ -477,16 +480,18 @@ namespace STSL {
          *  TODO: разбить функцию и сократить колличество строк в функции. 29.07.23 - лень делать
          * */
         int readResultFromCsv(const std::string &fn) {
+            // Открываем файл на чтение
             std::ifstream fin{fn, std::ios::binary | std::ios::in};
             if (!fin.is_open()) {
                 return -1;
             }
 
             ResultDF rdf;
-            std::pair<std::string, std::vector<ResultTest>> prdf
-            std::string buf, gr, nm;
+            std::pair<std::string, std::vector<ResultTest>> prdf;
+            std::string buf, gp, nm;
             ResultTest rt;
             while (fin.eof() == 0) {
+                // Читаем группу
                 do {
                     fin >> buf;
                     if (buf != ";")
@@ -494,17 +499,20 @@ namespace STSL {
                 } while (buf != ";");
                 gp.pop_back();
 
-                if (prdf.first.empty()) {
+                // Добавляем блок
+                if (prdf.first.empty()) {  // Если элементов еще нету
                     prdf.first = gp;
-                } else if (prdf.first == gp) {
                     gp.clear();
-                } else {
+                } else if (prdf.first == gp) {  // Если группа совпала, проводим очистку
+                    gp.clear();
+                } else {  // Добавляем группу
                     rdf.push_back(prdf);
                     DataFrameFunction::clear_buffer_pair_rt(prdf);
                     prdf.first = gp;
                     gp.clear();
                 }
                 
+                // Читаем имя
                 do {
                     fin >> buf;
                     if (buf != ";")
@@ -513,14 +521,27 @@ namespace STSL {
                 nm.pop_back();
                 rt.name = nm;
 
+                // Читаем данные
                 fin >> rt.avg >> buf >> rt.min >> buf >> rt.max >> buf >> buf;
+
+                // Мы еще случайно читаем не то, что нам надо(кусочек группы, его надо сохранить)
+                if (buf == ";") {
+                    buf.clear();
+                } else {
+                    gp += (buf + " ");
+                    buf.clear();
+                }
                 prdf.second.push_back(rt);
                 nm.clear();
                 rt.clear();
-                buf.clear();
             }
+            rdf.push_back(prdf);
+            DataFrameFunction::clear_buffer_pair_rt(prdf);
+            gp.clear();
 
-            rsdf.push_back(std::pair<std::string, ResultDF>>(std::string(fn.cbegin(), (fn.cend() - 4)), rdf));
+
+            rsdf.push_back(std::pair<std::string, ResultDF>(std::string(fn.cbegin(), (fn.cend() - 4)), rdf));
+            return 0;
         }
 
         /** @brief writeResultsToCsv - Функция записывает сохраненные данные в "csv"
@@ -543,9 +564,9 @@ namespace STSL {
                     for (size_t k = 0, L = rdf[j].second.size(); k < L; ++k) {
                         fout << rdf[j].first << " ; " 
                              << rdf[j].second[k].name << " ; " 
-                             << rdf[j].second[k].avg << " ; " 
-                             << rdf[j].second[k].min << " ; " 
-                             << rdf[j].second[k].max << " ; " << endl;
+                             << std::fixed << rdf[j].second[k].avg << " ; " 
+                             << std::fixed << rdf[j].second[k].min << " ; " 
+                             << std::fixed << rdf[j].second[k].max << " ; " << std::endl;
                     }
                 }
                 fout.close();

@@ -3,8 +3,13 @@
 
 
 
-#include <iostream>
 #include <fstream>
+#include <exception>
+
+#include "DataFrame.h"
+#include "GetCPUTime.h"
+
+#if 0
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -18,9 +23,10 @@
 #else
 #error "Unable to define getCPUTime() for an unknown OS."
 #endif
-
+#endif
 
 namespace STSL {
+#if 0
 // ResultTest.h
     /** @class ResultTest - объект для хранения и поверхностной(получение среднего) обработки тестов
      * */
@@ -62,7 +68,8 @@ namespace STSL {
             avg /= values.size();
         }
     }; 
-
+#endif
+#if 0
 // ObjectTest.h
     /** @class ObjectTest - Сохраняем функцию в которой проходит тест в отдельную структуру, \
      *                      из которой позже произведем ее вызов
@@ -82,7 +89,8 @@ namespace STSL {
             foo = nullptr;
         }
     };
-
+#endif
+#if 0
 // GetCPUTime.h
     /** @breif getCPUTime - \
      * Возвращает количество процессорного времени, используемого текущим процессом, \
@@ -162,7 +170,9 @@ namespace STSL {
 #endif
         return -1;
     }
-
+#endif
+#if 0
+//DataFrame.h
     // Сокращения работы с сложными объектами
     //                                      Группа       frame группы
     using ObjectDF = std::vector<std::pair<std::string, std::vector<ObjectTest>>>;  // ObjectDataFrame
@@ -223,7 +233,8 @@ namespace STSL {
             }
         }
     };
-
+#endif
+#if 1
 // TimeTest.h
     class _no_some_data_in_add : public std::exception {
     public:
@@ -233,6 +244,8 @@ namespace STSL {
             std::cout << "Не указан какой-то тип данных" << std::endl;
         }
     };
+
+#define TEST_COUNT 10  // Макрос колличества проводимых тестов
 
     /** @class TimeTest - класс, который заполняется тестами и их выполняет, возращая набор данных
      */
@@ -354,8 +367,11 @@ namespace STSL {
             DataFrameFunction::clear_object_data_frame(odf);
         }
     };
-
+#endif
+#if 0
 // ResultOut.h
+    /** @class ResultsOut - класс нужен для вывод таблицы, либо в .csv, либо в .tex
+     * */
     class ResultsOut {
         ResultsDF rsdf;  // Массив результатов
        
@@ -574,7 +590,7 @@ namespace STSL {
             return 0;
         }
     };
-
+#endif
 };  // StepanTestScriptLibrary
 
 

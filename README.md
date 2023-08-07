@@ -97,39 +97,11 @@ void test() {
 }
 ```
 
-```C++
-void test() {
-#if 0
-    STSL::ResultsOut ro;
-    ro.readResultFromCsv("Имя процессора/системы.csv");
-    ro.outTexResults();
-#else
-    STSL::TimeTest tt(std::string("Apple Silicon M1 Pro 14+8"));
-    const std::string group_first = "Проверочная группа";
-    tt.add(group_first,
-           std::string("Тест 1, на 100 элементов"),
-           Big_Work1);
-    tt.add(group_first,
-           std::string("Тест 2, на 1000 элементов"),
-           Big_Work2);
-    tt.add(group_first,
-           std::string("Тест 3, на 10000 элементов"),
-           Big_Work3);
-    auto rtt = tt.dotests();
-    STSL::DataFrameFunction::print_pair_resultdf(rtt);
-    STSL::ResultsOut ro(rtt);
-    
-    ro.outTexResults();
-
-    ro.writeResultsToCsv();
-#endif
-}
-
-
-```
-
-
 ## Пример
+
+### Пример работы статус бар
+
+Слева с скобках указана группа готорая тестируется
 
 ```cmd
 Тестирование: Проверка скорости работы функции getCPUTime()
@@ -142,5 +114,56 @@ void test() {
 [2/2][=================>                                          ] 28 %
 ```
 
-Вывод в *.tex* формат таблицы, вывод 1 теста в терминал для проверки.
+### Пример вывод в терминал
 
+```cmd
+CPU: Apple Silicon M1 Pro 14+8
+Группа: Проверка скорости внутренних функций, нужных для уточнения погрешности
+Имя теста: Проверка скорости работы функции getCPUTime()
+---> avg: -0.001849 min: -0.002036 max: -0.001656
+
+
+
+Группа: Проверочная группа
+Имя теста: Тест 1, на 100 элементов
+---> avg: 0.000054 min: 0.000052 max: 0.000064
+
+Имя теста: Тест 2, на 1000 элементов
+---> avg: 0.002696 min: 0.002524 max: 0.003390
+
+Имя теста: Тест 3, на 10000 элементов
+---> avg: 0.239396 min: 0.236820 max: 0.240950
+```
+
+### Пример вывод в формате tex
+
+```tex
+\begin{tabular}{|p{2.0in}|p{1.5in}|p{1.5in}|}
+    \hline
+    Название & Времнная & \multicolumn{1}{c|}{Процессор}  \\ \cline{3-3}
+    теста    & характеристика & Apple Silicon M1 Pro 14+8 \\
+    \hline
+    \multicolumn{3}{|c|}{Проверка скорости внутренних функций, нужных для уточнения погрешности} \\
+    \hline
+    Проверка скорости работы функции getCPUTime() & avg & -0.001849\\ \cline{2-3}
+                                                  & min & -0.002036\\ \cline{2-3}
+                                                  & max & -0.001656\\
+    \hline 
+    \multicolumn{3}{|c|}{Проверочная группа}     \\
+    \hline
+    Тест 1, на 100 элементов & avg & 0.000054    \\ \cline{2-3}
+                             & min & 0.000052    \\ \cline{2-3}
+                             & max & 0.000064    \\
+    \hline 
+    Тест 2, на 1000 элементов & avg & 0.002696   \\ \cline{2-3}
+                              & min & 0.002524   \\ \cline{2-3}
+                              & max & 0.003390   \\
+    \hline 
+    Тест 3, на 10000 элементов & avg & 0.239396  \\ \cline{2-3}
+                               & min & 0.236820  \\ \cline{2-3}
+                               & max & 0.240950  \\
+    \hline 
+\end{tabular}
+```
+
+# Версия 1.0

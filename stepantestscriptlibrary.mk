@@ -9,7 +9,6 @@ C_SRCS += \
 ./StepanTestScriptLibrary/project/GetCPUTime.cpp \
 ./StepanTestScriptLibrary/project/TimeTest.cpp \
 ./StepanTestScriptLibrary/project/ResultOut.cpp
-./project/main.cpp
 
 C_DEPS += \
 ./StepanTestScriptLibrary/project/ResultTest.d \

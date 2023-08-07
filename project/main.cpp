@@ -69,10 +69,11 @@ double Big_Work3() {
 
 
 void test() {
-#if 0
+#if 1
     STSL::ResultsOut ro;
     ro.readResultFromCsv("Apple Silicon M1 Pro 14+8.csv");
-    ro.outTexResults();
+	ro.readResultFromCsv("Apple Silicon M2 Pro 14+8.csv");
+	ro.outTexResults();
 #else
     STSL::TimeTest tt(std::string("Apple Silicon M1 Pro 14+8"));
     const std::string group_first = "Проверочная группа";
@@ -94,6 +95,5 @@ void test() {
     ro.writeResultsToCsv();
 #endif
 }
-
 
 

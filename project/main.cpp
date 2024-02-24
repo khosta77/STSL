@@ -66,15 +66,24 @@ double Big_Work3() {
     return 0;
 }
 
+inline int sum(const int &a, const int &b) {
+	return (a + b);
+}
 
+bool test_sum(const int &d1, const int &d2, const int& answer) {
+	auto A = sum(d1, d2);
+	if (A == answer)
+		return true;
+	return false;
+}
 
 void test() {
-#if 1
+#if 0
     STSL::ResultsOut ro;
     ro.readResultFromCsv("Apple Silicon M1 Pro 14+8.csv");
 	ro.readResultFromCsv("Apple Silicon M2 Pro 14+8.csv");
 	ro.outTexResults();
-#else
+#elif 0
     STSL::TimeTest tt(std::string("Apple Silicon M1 Pro 14+8"));
     const std::string group_first = "Проверочная группа";
     tt.add(group_first,
@@ -93,6 +102,17 @@ void test() {
     ro.outTexResults();
 
     ro.writeResultsToCsv();
+#else
+    STSL::TrueTest tt(true, 1, std::string("Ефимов Ефим Ефимович"));
+	tt.NewGroup("Sum");
+	tt.mt(test_sum(0, 0, 0));
+	tt.mt(test_sum(1, 1, 2));
+	tt.mt(test_sum(2, 3, 5));
+	tt.NewGroup("Error");
+	tt.mt(test_sum(0, 0, 0));
+	tt.mt(test_sum(1, 1, 3));
+	tt.mt(test_sum(2, 3, 5));
+	tt.result_to_terminal();
 #endif
 }
 

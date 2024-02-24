@@ -8,4 +8,6 @@
 #include "TimeTest.h"
 #include "ResultOut.h"
 
+#include "TrueTest.h"
+
 #endif  // STEPANTESTSCRIPTLIBRARY_STEPANTESTSCRIPTLIBRARY_H_

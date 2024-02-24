@@ -8,7 +8,7 @@ C_SRCS += \
 ./project/DataFrame.cpp \
 ./project/GetCPUTime.cpp \
 ./project/TimeTest.cpp \
-./project/ResultOut.cpp \
+./project/TrueTest.cpp \
 ./project/main.cpp
 
 C_DEPS += \
@@ -18,6 +18,7 @@ C_DEPS += \
 ./project/GetCPUTime.d \
 ./project/TimeTest.d \
 ./project/ResultOut.d \
+./project/TrueTest.cpp \
 ./project/main.d
 
 OBJS += \
@@ -27,12 +28,13 @@ OBJS += \
 ./project/GetCPUTime.o \
 ./project/TimeTest.o \
 ./project/ResultOut.o \
+./project/TrueTest.cpp \
 ./project/main.o
 
 
 project/%.o: ./project/%.cpp project/project.mk
 	@echo 'Цель построения: $<'
 	@echo 'Операция: Compiler'
-	g++ -Wall -Wextra -Werror -ansi -std=c++17 -O3 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -c -o "$@" "$<"
+	g++ -Wall -Wextra -Werror -ansi -std=c++17 -O3 -MMD -MP -MF "$(@:%.o=%.d)" -MT "$@" -c -o "$@" "$<"
 	@echo 'Цель готового здания: $<'
 	@echo ' '

@@ -4,7 +4,7 @@ STD=-std=c++17  # Версия cpp
 
 -include project/project.mk
 
-all: clean $(TARGET) clean_d_o
+all: clean clean_d_o $(TARGET)
 
 $(TARGET): $(OBJS) makefile
 	@echo 'Цель построения: $@'
